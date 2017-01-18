@@ -17,18 +17,20 @@ import System.Posix.IO (stdInput)
 import Network.Socket (sendTo,defaultProtocol,inet_addr,socket,Family(AF_INET),SocketType(Datagram),SockAddr(SockAddrInet))
 import Network
 
---uDPSendPort = 1012
---uDPSendIP = "127.0.0.1"
---port = ?
+-- UDPSendPort = 1012
+-- UDPSendIP = 127.0.0.1
+-- port = ?
 
 name = "MessageServer"
 pass_msg = "password\r"
 init_msg = "connect\r"
 
---protocol 
+-- protocol 
 --   init
 --   'custom_name'
 --   pass
+
+-- it sends udp message to the UDPSendPort and UDPSendIP in case of incorrect protocol usage
 
 -- send 'info' to check connection other side
 -- send 'heartbeat' for presence server
@@ -65,17 +67,17 @@ main = withSocketsDo $ do
             o <- newEmptyMVar
             loop sock m o [] [] [] port (fromIntegral $ read uDPSendPort) uDPSendIP
         _ -> do
-            writeToFile "UDPSendPort UDPSendIP port" "ERROR args"
+            writeToStdOut "UDPSendPort UDPSendIP port" "ERROR args"
 
-writeToFile :: String -> String -> IO ()
-writeToFile msg ip = do
+writeToStdOut :: String -> String -> IO ()
+writeToStdOut msg ip = do
     time <- getZonedTime
     putStr $ "[" ++ (show time)  ++ "] " ++ ip ++ ": " ++ msg ++ "\n"
     hFlush stdout
     return ()
 
-writeToFileSendUDP :: String -> String -> PortNumber -> String -> IO ()
-writeToFileSendUDP msg ip uDPSendPort uDPSendIP = do
+writeToStdOutSendUDP :: String -> String -> PortNumber -> String -> IO ()
+writeToStdOutSendUDP msg ip uDPSendPort uDPSendIP = do
     time <- getZonedTime
     let message = "[" ++ (show time)  ++ "]" ++ "," ++ ip ++ "," ++ msg ++ "\n"
     putStr message
@@ -112,7 +114,7 @@ loop sock m o list nameList threadList port uDPSendPort uDPSendIP = do
         False -> do 
             hClose h
             let message = "1" ++ "," ++ name ++ "," ++ port ++ "," ++ msg1 
-            writeToFileSendUDP message ip uDPSendPort uDPSendIP
+            writeToStdOutSendUDP message ip uDPSendPort uDPSendIP
             loop sock m o list nameList threadList port uDPSendPort uDPSendIP
 
 goWithoutDuplicatesWaitForThreadKilled :: String -> Handle -> String -> Socket -> MVar (Handle,String,ThreadId) -> MVar ([Handle],[String],[ThreadId]) -> [Handle] -> [String] -> [ThreadId] -> String -> String -> PortNumber -> String -> IO ()       
@@ -141,7 +143,7 @@ goWithoutDuplicates msg1 h name sock m o list nameList threadList ip port uDPSen
             let updatedNameList = name:nameList
             case length updatedList of
                 3 -> do
-                    writeToFile "ALREADY 2 CONNECTED" ip
+                    writeToStdOut "ALREADY 2 CONNECTED" ip
                     hClose h
                     loop sock m o list nameList threadList port uDPSendPort uDPSendIP
                 _ -> do
@@ -158,12 +160,12 @@ auth msg1 msg2 (h:h2) (nameH:nameH2) threadH2 m o ip port uDPSendIP uDPSendPort=
      msg3 <- readMessage h nameH ip
      case check_pass msg3 of 
         True -> do
-            writeToFile ("=========> connected users: " ++ show (nameH:nameH2)) ip          
+            writeToStdOut ("=========> connected users: " ++ show (nameH:nameH2)) ip          
             server h h2 nameH nameH2 threadH threadH2 m o ip
         False -> do
             hClose h
             let message = "1" ++ "," ++ name ++ "," ++ port ++ "," ++ msg1 ++ " | " ++ msg2 ++ " | " ++ msg3
-            writeToFileSendUDP message ip uDPSendIP uDPSendPort
+            writeToStdOutSendUDP message ip uDPSendIP uDPSendPort
             putSomethingInMVar o ([h],[nameH],[threadH]) h nameH threadH ip
 
 
@@ -202,7 +204,7 @@ readMessage h nameH ip = do
         Left ex -> do
              --putStr "error: "
              let valid = onlyValidSigns $ show ex
-             writeToFile valid ip
+             writeToStdOut valid ip
              return "quit\r"
         Right msg -> do
              --putStr "message: "
@@ -212,7 +214,7 @@ readMessage h nameH ip = do
                     returnMessage h nameH "heartbeat\r" ip
                     readMessage h nameH ip
                 _             -> do
-                    writeToFile (show nameH ++ ": " ++ valid) ip
+                    writeToStdOut (show nameH ++ ": " ++ valid) ip
                     return msg
 
 returnMessage :: Handle -> String -> String -> String -> IO String
@@ -243,7 +245,7 @@ tryPutMessage h nameH threadH m o msg ip = do
         Nothing -> do 
             --hPutStr h "No connection to other end."
             --hFlush h
-            writeToFile "No connection to other end." ip
+            writeToStdOut "No connection to other end." ip
             case msg of 
                 "quit\r" -> putSomethingInMVar o ([h],[nameH],[threadH]) h nameH threadH ip
                 _ -> loopServer h Nothing nameH Nothing threadH Nothing m o ip
@@ -257,13 +259,13 @@ putSomethingInMVar mvar var h nameH threadH ip = do
             True -> do
                 putMVar mvar var
                 hClose h 
-                writeToFile (show nameH ++ " has quitted!") ip
+                writeToStdOut (show nameH ++ " has quitted!") ip
                 --cancel threadH
             False -> do
                 (h2,nameH2,threadH2) <- takeMVar mvar
                 putMVar mvar (h2++[h],nameH2++[nameH],threadH2++[threadH])
                 hClose h 
-                writeToFile (show nameH ++ " has quitted!") ip
+                writeToStdOut (show nameH ++ " has quitted!") ip
                 --cancel threadH
 
 onlyValidSigns :: String -> String
