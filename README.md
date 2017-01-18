@@ -2,6 +2,8 @@
 
 This messageserver can be used to connect two tcp connections to form a passage. When a third wants to connect, it gets rejected to ensure safe communication between two hosts. It also sends UDP messages when something is wrong, like the protocol that is not being followed.
 
+Feel free to let me know if something isn't working as it should at bouwe.ceune$
+
 ### Get it running
 
 ```sh
