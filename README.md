@@ -1,4 +1,4 @@
-# Message server in Haskell
+# Message server written in Haskell
 
 This messageserver can be used to connect two tcp connections to form a passage. When a third wants to connect, it gets rejected to ensure safe communication between two hosts. It also sends UDP messages when something is wrong, like the protocol that is not being followed.
 
@@ -20,8 +20,28 @@ In order to get into the messageserver when connecting to it, a protocol is need
 -   'name'
 -   pass
 
-#### Features
+### Features
 
 - send 'info' to get information about the other connected side.
 - send 'quit' to quit
 - UDP messages are send when the protocol is not followed by the host, this prevents unwanted intrusions
+
+### Example usage
+
+```sh
+$ ./messageserver 1012 127.0.0.1 5678
+```
+
+```sh
+$ telnet 127.0.0.1 5678
+>> connect
+>> user1
+>> passw
+```
+
+```sh
+$ telnet 127.0.0.1 5678
+>> connect
+>> user2
+>> passw
+```
