@@ -1,4 +1,4 @@
-# Message server in Haskell
+# Message server in Haskell (UNMAINTAINED)
 
 This messageserver can be used to connect two tcp connections to form a passage. When a third wants to connect, it gets rejected to ensure safe communication between two hosts. It also sends UDP messages when something is wrong, like the protocol that is not being followed.
 
